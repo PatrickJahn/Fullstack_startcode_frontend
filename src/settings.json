@@ -1,0 +1,5 @@
+
+{
+    "graphqlEndpoint":"http://localhost:5555/graphql",
+    "loginEndpoint": "http://localhost:5555/api/friends/login"
+}

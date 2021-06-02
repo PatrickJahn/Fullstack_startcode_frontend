@@ -13,5 +13,6 @@ export type Gender = "MALE" | "FEMALE" | "OTHER"
    age: number
    lastName: string
    email: string
+   password?: string
  }
  

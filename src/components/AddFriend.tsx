@@ -1,47 +1,66 @@
 import React, { useMemo, useState } from "react";
-import ILyndaFriend, { Gender } from "../interfaces/interfaces"
-import { useMutation, gql } from "@apollo/client"
+import IFriend, { Gender } from "../interfaces/interfaces"
+import { useMutation, gql, ApolloClient, ApolloError } from "@apollo/client"
 import {ALL_FRIENDS} from "./AllFriends"
 
 
+
+
+interface IFriendResult {
+  createFriend: IFriend
+}
+
+ 
+interface FriendInput  {
+  firstName: string
+  lastName: string
+  email: string
+  password: string 
+}
+interface IFriendInput  {
+  friend: FriendInput
+}
+
+
 const ADD_FRIEND = gql`
-mutation createFriend($friend:FriendInput) {
+mutation createFriend($friend: FriendInput) {
   createFriend(input:$friend){
     firstName
     lastName
     email
-    age
-    gender
     id
+    role
   }
 }`
 
 type AddFriendProps = {
-  initialFriend?: ILyndaFriend
+  initialFriend?: FriendInput
 }
 
-interface IKeyableFriend extends ILyndaFriend {
+interface IKeyableFriend extends FriendInput {
   [key: string]: any
 }
 const AddFriend = ({ initialFriend }: AddFriendProps) => {
-  const EMPTY_FRIEND: ILyndaFriend = { firstName: "", lastName: "", gender: "OTHER", age: 0, email: "" }
+  const EMPTY_FRIEND: FriendInput = { firstName: "", lastName: "", email: "" , password:""}
   let newFriend = initialFriend ? initialFriend : { ...EMPTY_FRIEND }
 
   const [friend, setFriend] = useState({ ...newFriend })
-
-  const [createFriend, {loading, error, data}] = useMutation(
+  const [err, setErr] = useState("")
+  const [fData, setFdata] = useState("")
+  const [createFriend, {loading, data}] = useMutation<IFriendResult, IFriendInput>(
     ADD_FRIEND,
     {
     update(cache, {data}){
-      const addedFreind = data.createFriend;
+      const addedFreind = data?.createFriend;
       const d: any = cache.readQuery({query: ALL_FRIENDS})
       if (!d){
         return
       }
-      let allFriends = d.allFriends
+      let allFriends = d.getAllFriends
+      
       cache.writeQuery({
         query: ALL_FRIENDS,
-        data: {allFriends: [...allFriends, addedFreind]}
+        data: {getAllFriends: [...allFriends, addedFreind]}
       })
 
     }
@@ -52,25 +71,34 @@ const AddFriend = ({ initialFriend }: AddFriendProps) => {
     const id = event.currentTarget.id;
     let friendToChange: IKeyableFriend = { ...friend }
 
-    if (id === "age"){
-      friendToChange[id] = Number(event.currentTarget.value);
-    } else {
+  
     friendToChange[id] = event.currentTarget.value;
-    }
+    
     setFriend({ ...friendToChange })
   }
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+
+   interface apiError{
+    message: string
+  }
+  const  handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
  
     createFriend({
       variables:{friend:{...friend}}
+    }).then(res => setFdata("w")).catch((fejl? : apiError)=>{
+      if (fejl) {
+        setErr(fejl.message)
+      } else {
+        setErr("")
+      }
+
     })
-    setFriend({ ...EMPTY_FRIEND })
+     
   }
-
-
   return (
     <form onSubmit={handleSubmit}>
+      {err != "" && err != "undefined is not an object" && <p style={{color: "red"}}>{err}</p>}
+     {loading && <p>Loading...</p>}
       <label>
         FirstName<br />
         <input type="text" id="firstName" value={friend.firstName} onChange={handleChange} />
@@ -85,19 +113,12 @@ const AddFriend = ({ initialFriend }: AddFriendProps) => {
         Email <br />
         <input type="text" id="email" value={friend.email} onChange={handleChange} />
       </label>
-      <label>
-        Gender &nbsp;
-          <select id="gender" value={friend.gender} onChange={handleChange}>
-          <option value="MALE">Male</option>
-          <option value="FEMALE">Female</option>
-          <option value="OTHER">Other</option>
-        </select>
-      </label>
       <br />
       <label>
-        Age <br />
-        <input type="number" id="age" value={friend.age} onChange={handleChange} />
-      </label>
+        Password <br/>
+        <input type="text" id="password" value={friend.password} onChange={handleChange} />
+        <br />
+     </label>
       <br /><br />
       <input type="submit" value="Save Friend" />
     </form>

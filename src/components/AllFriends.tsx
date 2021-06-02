@@ -14,7 +14,7 @@ query{
     firstName
     lastName
     email
-    
+    role
   }
 }
 `

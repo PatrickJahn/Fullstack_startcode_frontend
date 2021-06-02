@@ -50,7 +50,7 @@ export default function FindFriend() {
 
       <h2>Fetch a friend using the provided id</h2>
         {called && loading && <p>Loading...</p>}
-        {error && <p>No user found</p>}
+        {error && <p>No user found...</p>}
         {data && <p>{data.getFriendFromId.firstName} {data.getFriendFromId.lastName}</p>}
     </div>)
 }
